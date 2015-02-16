@@ -14,16 +14,17 @@ using System.Runtime.InteropServices;
 namespace ARGL
 {
     public partial class Form1 : Form
-    {
+    { 
+        private TabControl dynamicTabControl;
+        int isClickedBtn1 = 0, isClickedBtn2 = 0;
+        private TabPage tabPage;
+        int click_number = 0;
+        string previous_tab;
+
         public Form1()
         {
-            InitializeComponent();
+            InitializeComponent();   
         }
-
-        private TabControl dynamicTabControl;
-        Boolean isClickedBtn1 = false, isClickedBtn2 = false, isClickedBtn3 = false, isClickedBtn4 = false , isClickedBtn5 = false;
-        //int indexBtn2 = 0;
-        //TabPage tabPgm2;
 
         [DllImport("user32.dll")]
         static extern IntPtr SetParent(IntPtr hwc, IntPtr hwp);
@@ -39,16 +40,47 @@ namespace ARGL
             dynamicTabControl.ForeColor = Color.Transparent;
             dynamicTabControl.BackColor = Color.Transparent;
             
-         
-            dynamicTabControl.Font = new Font("Georgia", 16);
+            dynamicTabControl.Font = new Font("Georgia", 12);
             dynamicTabControl.Width = 500;
             dynamicTabControl.Height = 500;
             dynamicTabControl.Location = new Point(227,12);
+            dynamicTabControl.MouseDown += new System.Windows.Forms.MouseEventHandler(tab_OnMouseDown);
 
             //Add the tabControl to the form
             this.Controls.Add(dynamicTabControl);
 
             AdjustFormSize();
+        }
+
+        private void tab_OnMouseDown(object sender, System.Windows.Forms.MouseEventArgs e)
+        {
+            click_number++;
+            previous_tab = sender.ToString();
+            if (click_number > 1)
+            { 
+                for (int i = 0; i < this.dynamicTabControl.TabPages.Count; i++)
+                {
+                    Rectangle r = dynamicTabControl.GetTabRect(i);
+                    // Rectangle closeButton = new Rectangle(r.Right - 5, r.Top -2, 9, 10);
+                    Rectangle closeButton = new Rectangle(r.Location.X, r.Location.Y, r.Size.Width, r.Size.Height);
+                    if (closeButton.Contains(e.Location))
+                    {
+                        if (MessageBox.Show("Would you like to Close this Tab", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                        {
+                            this.dynamicTabControl.TabPages.RemoveAt(i);
+                            break;
+                        }
+                    }
+                }
+                click_number = 0;
+            }
+
+            
+            if (this.dynamicTabControl.TabPages.Count == 0)
+            {
+                AdjustFormSize();
+            }
+            
         }
 
         private void btnexit_Click(object sender, EventArgs e)
@@ -58,49 +90,61 @@ namespace ARGL
 
         private void btn1_Click(object sender, EventArgs e)
         {
-            
-            if (isClickedBtn1)
-            {
+           if (isClickedBtn1 == 0)
+           {
                 btn1.Text = "Program 1";
-                dynamicTabControl.TabPages[0].Dispose();
-                isClickedBtn1 = false;
-
-            }
-            else
-            {
-                AddTabPage(btn1.Name);
-                isClickedBtn1 = true;
-                btn1.Text = "Close Program1";
+  
+                AddTabPage(btn1);
+                isClickedBtn1 ++;
                
+                //Execute Calculator code
+                Process p = Process.Start("calc.exe");
+                //Process p = Process.Start("C:\\Program Files\\Ocean Optics\\OceanView\\oceanview\\bin\\OceanViewWindowsLauncher.exe");
+               //Process p = Process.Start("C:\\Program Files (x86)\\Fiso Technologies\\FISOCommander 2 Standard Edition\\FCSv2.exe");
+                Thread.Sleep(500);
+                p.WaitForInputIdle();
+                SetParent(p.MainWindowHandle, dynamicTabControl.TabPages[btn1.Name].Handle);
+          } 
+            AdjustFormSize();
+        }
+
+ 
+        private void btn2_Click(object sender, EventArgs e)
+        {   
+            if (isClickedBtn2 == 0)
+            {
+                AddTabPage(btn2);
+                isClickedBtn2 ++;
+                btn2.Text = "Program2";
+
                 //Execute Calculator code
                 Process p = Process.Start("calc.exe");
                 Thread.Sleep(500);
                 p.WaitForInputIdle();
-                SetParent(p.MainWindowHandle, this.dynamicTabControl.TabPages[0].Handle);
-            } 
-            AdjustFormSize();
-
+                SetParent(p.MainWindowHandle, dynamicTabControl.TabPages[btn2.Name].Handle);
+            }
+            AdjustFormSize(); 
         }
 
-        public void AddTabPage(string name)
+        public void AddTabPage(Button btn)
         {
-            TabPage tabPage1 = new TabPage();
-            tabPage1.Name = name;
-            tabPage1.Text = name;
-            tabPage1.BackColor = Color.Green;
-            tabPage1.ForeColor = Color.White;
-            tabPage1.Font = new Font("Verdana", 12);
-            tabPage1.Width = 500;
-            tabPage1.Height = 500;
-            this.dynamicTabControl.TabPages.Add(tabPage1);
+            tabPage = new TabPage("");
+            tabPage.Name = btn.Name;
+            tabPage.Text = btn.Text;
+            //tabPage.BackColor = Color.Green;
+            tabPage.ForeColor = Color.White;
+            tabPage.Font = new Font("Verdana", 12);
+            tabPage.Width = 500;
+            tabPage.Height = 500;
+            this.dynamicTabControl.TabPages.Add(tabPage);
 
         }
+
         public void AdjustFormSize()
         {
             if (dynamicTabControl.TabCount > 0)
             {
                 this.Size = new Size(800, 500);
-
             }
             else
             {
@@ -108,41 +152,6 @@ namespace ARGL
             }
         }
 
-        public void calculatorTab() { 
-        
-        }
-
-        private void btn2_Click(object sender, EventArgs e)
-        {
-          /*  tabPgm2 = new TabPage();
-           
-            if (isClickedBtn2)
-            {
-               // btn2.Text = btn1.Name;
-                dynamicTabControl.TabPages.Remove(tabPgm2);
-                isClickedBtn2 = false;
-
-            }
-            else
-            {
-                //Create a new tab for program2
-                tabPgm2.Name = btn2.Text;
-                tabPgm2.Text = btn2.Text;
-
-                dynamicTabControl.TabPages.Add(tabPgm2.Name);
-
-                indexBtn2 = dynamicTabControl.TabIndex +1;
-                isClickedBtn2 = true;
-                btn1.Text = "Close Program2";
-
-                //Execute Calculator code
-                Process p = Process.Start("calc.exe");
-                Thread.Sleep(500);
-                p.WaitForInputIdle();
-                SetParent(p.MainWindowHandle,tabPgm2.Handle);
-            }
-            AdjustFormSize(); */
-        }
        
     }
 }
